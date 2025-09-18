@@ -9,4 +9,5 @@ add_executable(
     main.cpp 
     server.cpp
     db.cpp
+    connection_handler.cpp
 )

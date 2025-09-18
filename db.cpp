@@ -1,7 +1,7 @@
 #include "db.h"
 
-#include <iostream>
 #include <exception>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -17,10 +17,10 @@ int set_value(std::string &key, db_value &value) {
     if (!db.contains(key)) {
       key_mutexes[key] = std::make_unique<std::mutex>();
     }
-    g.unlock();  
+    g.unlock();
     std::lock_guard<std::mutex> lk(*key_mutexes[key]);
     db[key] = value;
-  } catch (std::exception& e) {
+  } catch (std::exception &e) {
     std::cout << "Error setting key: " << key << std::endl;
     return -1;
   }

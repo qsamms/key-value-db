@@ -1,10 +1,12 @@
 #include "server.h"
+#include "connection_handler.h"
 
 #include <arpa/inet.h>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 Server::Server() {
@@ -46,7 +48,7 @@ void Server::run() {
 
   while (1) {
     socklen_t addrlen = sizeof(address);
-    client_fd = accept(server_fd, (struct sockaddr *)&address, &addrlen);
+    int client_fd = accept(server_fd, (struct sockaddr *)&address, &addrlen);
 
     if (client_fd == -1) {
       close(server_fd);
@@ -55,19 +57,10 @@ void Server::run() {
 
     std::string client_ip = inet_ntoa(address.sin_addr);
     int client_port = ntohs(address.sin_port);
-
     std::cout << "Connection from " << client_ip << ":" << client_port
               << std::endl;
 
-    std::string msg = "Hello from server!\n";
-    send(client_fd, msg.c_str(), msg.size(), 0);
-
-    // Optionally receive data
-    char buffer[3000] = {0};
-    int bytes_read = recv(client_fd, buffer, sizeof(buffer), 0);
-    if (bytes_read > 0) {
-      std::cout << "Client says: " << buffer << std::endl;
-    }
-    close(client_fd);
+    std::thread t(handle_connection, client_fd);
+    t.detach();
   }
 }
