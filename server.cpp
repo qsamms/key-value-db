@@ -16,7 +16,8 @@ Server::Server() {
 
 Server::~Server() { close(server_fd); }
 
-void Server::bind_and_listen(uint32_t server_port, uint8_t max_pending_connections) {
+void Server::bind_and_listen(uint32_t server_port,
+                             uint8_t max_pending_connections) {
   port = server_port;
   address.sin_family = AF_INET;         // IPv4
   address.sin_addr.s_addr = INADDR_ANY; // Bind to all interfaces
