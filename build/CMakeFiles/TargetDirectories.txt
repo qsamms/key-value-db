@@ -1,0 +1,3 @@
+/home/quinn/workspace/key-value-store/build/CMakeFiles/server.dir
+/home/quinn/workspace/key-value-store/build/CMakeFiles/edit_cache.dir
+/home/quinn/workspace/key-value-store/build/CMakeFiles/rebuild_cache.dir
