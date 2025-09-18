@@ -56,20 +56,14 @@ void handle_connection(const uint32_t client_fd) {
     char buffer[1024];
     while (1) {
         try {
+            // recv is a blocking call until either data is received or the client
+            // has terminated the connection, 0 bytes means client terminated
             int bytes_read = recv(client_fd, buffer, sizeof(buffer), 0);
-            if (bytes_read > 0) {
-                Request req;
-                req.client_fd = client_fd;
-                req.command_str = std::string(buffer);
+            if (bytes_read == 0) break;
 
-                Command command = parse_command(req.command_str);
-
-                std::cout << command.action << " " << command.value << std::endl;
-            } else {
-                // recv is blocking call until either data is received or the client
-                // has terminated the connection, if bytes read is 0 conneciton was terminated. 
-                break;
-            }
+            Command command = parse_command(std::string(buffer));
+            std::cout << command.action << " " << command.value << std::endl;
+            
         } catch (InvalidCommandException& e) {
             send(client_fd, e.what(), e.get_message_size(), 0);
         }

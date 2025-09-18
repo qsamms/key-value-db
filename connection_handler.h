@@ -23,11 +23,6 @@ struct Command {
   std::time_t expiration;
 };
 
-struct Request {
-  int client_fd;
-  std::string command_str;
-};
-
 std::vector<std::string> split(const std::string &s, char delimiter);
 Action string_to_action(const std::string &s);
 Command parse_command(const std::string &command);
