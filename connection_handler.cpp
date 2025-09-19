@@ -1,20 +1,28 @@
 #include "connection_handler.h"
-
-#include <arpa/inet.h>
-
-#include <algorithm>
-#include <cctype>
-#include <optional>
-#include <regex>
-
 #include "db.h"
 #include "exceptions.h"
 #include "response_codes.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <regex>
+
 std::regex int_re(R"(^[+-]?\d+$)");
 std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
 std::regex sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
+
+enum Action {
+    ACTION_SET,
+    ACTION_SETEX,
+    ACTION_GET,
+};
+
+struct Command {
+    Action action;
+    std::string key;
+    db_value value;
+    std::time_t expiration;
+};
 
 db_value value_from_string(const std::string& value) {
     if (std::regex_match(value, int_re)) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "response_codes.h"
+
 #include <exception>
 #include <string>
 

@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <sstream>
+#include <cctype>
 
 
 std::string to_lower(const std::string& str) {

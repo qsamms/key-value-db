@@ -11,4 +11,5 @@ add_executable(
     db.cpp
     connection_handler.cpp
     utils.cpp
+    response_codes.cpp
 )
