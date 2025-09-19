@@ -1,71 +1,102 @@
 #include "connection_handler.h"
-#include "exceptions.h"
 
 #include <arpa/inet.h>
+
 #include <algorithm>
 #include <cctype>
+#include <optional>
+#include <regex>
 
-std::string to_lower(const std::string& str) {
-    std::string out(str);
-    std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) { return std::tolower(c); });
-    return out;
+#include "db.h"
+#include "exceptions.h"
+#include "response_codes.h"
+#include "utils.h"
+
+std::regex int_re(R"(^[+-]?\d+$)");
+std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
+std::regex sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
+
+db_value value_from_string(const std::string& value) {
+    if (std::regex_match(value, int_re)) {
+        return std::stoi(value.c_str());
+    } else if (std::regex_match(value, float_re) || std::regex_match(value, sci_re)) {
+        return std::stod(value.c_str());
+    } else {
+        return value;
+    }
 }
-
 
 Action string_to_action(const std::string& s) {
     std::string lower = to_lower(s);
-    if (lower == "set") return SET;
-    else if (lower == "setx") return SETEX;
-    else if (lower == "get") return GET;
-    else throw InvalidCommandException("Unknown action\n");
+    if (lower == "set")
+        return ACTION_SET;
+    else if (lower == "setx")
+        return ACTION_SETEX;
+    else if (lower == "get")
+        return ACTION_GET;
+    else
+        throw InvalidCommandException();
 }
 
-std::vector<std::string> split(const std::string& s, char delimiter) {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::stringstream ss(s);
-
-    while (std::getline(ss, token, delimiter)) {
-        tokens.push_back(token);
-    }
-
-    return tokens;
-}
 
 Command parse_command(const std::string& command_str) {
     std::vector<std::string> command_parts = split(command_str, ' ');
 
-    if (command_parts.size() < 2) {
-        throw InvalidCommandException("Invalid Command, all commands must have an action and key. Example: GET <key>\n");
-    }
-    
-    Command c;
-    c.action = string_to_action(command_parts[0]);
-    c.key = command_parts[1];
+    if (command_parts.size() < 2) throw InvalidCommandException();
 
-    if (c.action == SET || c.action == SETEX) {
-        if (command_parts.size() < 3) {
-            throw InvalidCommandException("Inavlid Command, SET must be of form SET <key> <value>\n");
-        }
-        c.value = command_parts[2];
-    } 
-    return c;
+    std::string command_action = command_parts[0];
+    std::string command_key = command_parts[1];
+    std::string command_value;
+
+    if (command_parts.size() > 2) command_value = command_parts[2];
+
+    Command command;
+    command.action = string_to_action(command_action);
+    command.key = command_key;
+
+    if (command.action == ACTION_GET) command.value = 0;
+    else if (command.action == ACTION_SET || command.action == ACTION_SETEX) {
+        if (command_value.size() == 0) throw InvalidCommandException();
+        command.value = value_from_string(command_value);
+    }
+    return command;
+}
+
+std::string perform_command(Command& command) {
+    std::string key = command.key;
+    Action action = command.action;
+
+    if (action == ACTION_GET) {
+        std::optional<db_value> value = get_value(key);
+        if (!value) return ERR_NOT_FOUND;
+        return val_to_string(value.value());
+    } else if (action == ACTION_SET) {
+        int status = set_value(key, command.value);
+        if (status) {
+            return OK;
+        } else
+            return ERR_SETTING_VALUE;
+    }
 }
 
 void handle_connection(const uint32_t client_fd) {
     char buffer[1024];
     while (1) {
         try {
-            // recv is a blocking call until either data is received or the client
-            // has terminated the connection, 0 bytes means client terminated
             int bytes_read = recv(client_fd, buffer, sizeof(buffer), 0);
-            if (bytes_read == 0) break;
+            if (bytes_read <= 0) break;  // exit if client terminates connection
 
-            Command command = parse_command(std::string(buffer));
-            std::cout << command.action << " " << command.value << std::endl;
-            
+            uint16_t command_str_size = bytes_read;
+            if (buffer[bytes_read - 1] == '\n') command_str_size--;
+
+            Command command = parse_command(std::string(buffer, command_str_size));
+            std::string response = perform_command(command);
+            send(client_fd, response.c_str(), response.size(), 0);
+
         } catch (InvalidCommandException& e) {
             send(client_fd, e.what(), e.get_message_size(), 0);
+        } catch (std::exception& e) {
+            send(client_fd, ERR_UNKNOWN.c_str(), ERR_UNKNOWN.size(), 0);
         }
     }
     close(client_fd);
