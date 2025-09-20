@@ -1,5 +1,4 @@
 #include "server.h"
-#include "connection_handler.h"
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -10,6 +9,7 @@
 #include <string>
 #include <thread>
 
+#include "connection_handler.h"
 
 Server::Server() {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);

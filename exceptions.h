@@ -1,9 +1,9 @@
 #pragma once
 
-#include "response_codes.h"
-
 #include <exception>
 #include <string>
+
+#include "response_codes.h"
 
 class InvalidCommandException : public std::exception {
    private:

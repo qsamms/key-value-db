@@ -1,5 +1,5 @@
 #pragma once
 
-#include <cstdint> 
+#include <cstdint>
 
 void handle_connection(const uint32_t client_fd);

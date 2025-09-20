@@ -18,8 +18,8 @@ int set_value(const std::string& key, const db_value& value) {
         if (!db.contains(key)) {
             key_mutexes[key] = std::make_unique<std::mutex>();
         }
-        g.unlock();
         std::lock_guard<std::mutex> lk(*key_mutexes[key]);
+        g.unlock();
         db[key] = value;
     } catch (std::exception& e) {
         std::cout << "Error setting key: " << key << std::endl;
@@ -33,8 +33,8 @@ std::optional<db_value> get_value(const std::string& key) {
     if (!db.contains(key)) {
         return std::nullopt;
     }
-    g.unlock();
     std::lock_guard<std::mutex> lk(*key_mutexes[key]);
+    g.unlock();
     return db[key];
 }
 

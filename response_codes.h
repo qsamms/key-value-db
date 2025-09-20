@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string> 
+#include <string>
 
 extern const std::string OK;
 extern const std::string ERR_NOT_FOUND;

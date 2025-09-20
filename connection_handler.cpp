@@ -1,11 +1,13 @@
 #include "connection_handler.h"
+
+#include <arpa/inet.h>
+
+#include <regex>
+
 #include "db.h"
 #include "exceptions.h"
 #include "response_codes.h"
 #include "utils.h"
-
-#include <arpa/inet.h>
-#include <regex>
 
 std::regex int_re(R"(^[+-]?\d+$)");
 std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
@@ -25,13 +27,12 @@ struct Command {
 };
 
 db_value value_from_string(const std::string& value) {
-    if (std::regex_match(value, int_re)) {
+    if (std::regex_match(value, int_re))
         return std::stoi(value.c_str());
-    } else if (std::regex_match(value, float_re) || std::regex_match(value, sci_re)) {
+    else if (std::regex_match(value, float_re) || std::regex_match(value, sci_re))
         return std::stod(value.c_str());
-    } else {
+    else
         return value;
-    }
 }
 
 Action string_to_action(const std::string& s) {
@@ -45,7 +46,6 @@ Action string_to_action(const std::string& s) {
     else
         throw InvalidCommandException();
 }
-
 
 Command parse_command(const std::string& command_str) {
     std::vector<std::string> command_parts = split(command_str, ' ');
@@ -62,7 +62,8 @@ Command parse_command(const std::string& command_str) {
     command.action = string_to_action(command_action);
     command.key = command_key;
 
-    if (command.action == ACTION_GET) command.value = 0;
+    if (command.action == ACTION_GET)
+        command.value = 0;
     else if (command.action == ACTION_SET || command.action == ACTION_SETEX) {
         if (command_value.size() == 0) throw InvalidCommandException();
         command.value = value_from_string(command_value);
