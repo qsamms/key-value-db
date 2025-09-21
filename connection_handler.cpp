@@ -1,32 +1,22 @@
 #include "connection_handler.h"
-
-#include <arpa/inet.h>
-
-#include <regex>
-
-#include "db.h"
+#include "types.h"
 #include "exceptions.h"
 #include "response_codes.h"
 #include "utils.h"
+#include "db.h" 
+
+#include <iostream>
+#include <arpa/inet.h>
+#include <chrono>
+#include <regex>
 
 std::regex int_re(R"(^[+-]?\d+$)");
 std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
 std::regex sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
 
-enum Action {
-    ACTION_SET,
-    ACTION_SETEX,
-    ACTION_GET,
-};
-
-struct Command {
-    Action action;
-    std::string key;
-    db_value value;
-    std::time_t expiration;
-};
-
 db_value value_from_string(const std::string& value) {
+    if (value.size() == 0) throw InvalidCommandException();
+
     if (std::regex_match(value, int_re))
         return std::stoi(value.c_str());
     else if (std::regex_match(value, float_re) || std::regex_match(value, sci_re))
@@ -39,7 +29,7 @@ Action string_to_action(const std::string& s) {
     std::string lower = to_lower(s);
     if (lower == "set")
         return ACTION_SET;
-    else if (lower == "setx")
+    else if (lower == "setex")
         return ACTION_SETEX;
     else if (lower == "get")
         return ACTION_GET;
@@ -64,9 +54,23 @@ Command parse_command(const std::string& command_str) {
 
     if (command.action == ACTION_GET)
         command.value = 0;
-    else if (command.action == ACTION_SET || command.action == ACTION_SETEX) {
-        if (command_value.size() == 0) throw InvalidCommandException();
+    else if (command.action == ACTION_SET) {
         command.value = value_from_string(command_value);
+        command.expiration = -1;
+    } else if (command.action == ACTION_SETEX) {
+        if (command_parts.size() < 4) throw InvalidCommandException();
+
+        command.value = value_from_string(command_value);
+
+        std::string expiration_str = command_parts[3];
+        if (!std::regex_match(expiration_str, int_re)) throw InvalidCommandException();
+        int expiration_seconds = std::stoi(expiration_str);
+        if (expiration_seconds < 0) throw InvalidCommandException();
+
+        auto now = std::chrono::system_clock::now();
+        auto seconds_since_epoch =
+            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+        command.expiration = (int64_t)seconds_since_epoch + expiration_seconds;
     }
     return command;
 }
@@ -76,11 +80,11 @@ std::string perform_command(Command& command) {
     Action action = command.action;
 
     if (action == ACTION_GET) {
-        std::optional<db_value> value = get_value(key);
-        if (!value) return ERR_NOT_FOUND;
-        return val_to_string(value.value());
-    } else if (action == ACTION_SET) {
-        int status = set_value(key, command.value);
+        std::optional<db_entry> entry = get_value(key);
+        if (!entry) return ERR_NOT_FOUND;
+        return val_to_string(entry.value().value);
+    } else if (action == ACTION_SET || action == ACTION_SETEX) {
+        int status = set_value(key, command);
         if (status) {
             return OK;
         } else
