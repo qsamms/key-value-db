@@ -1,7 +1,5 @@
 #include "db.h"
 
-#include "types.h"
-
 #include <chrono>
 #include <exception>
 #include <iostream>
@@ -10,6 +8,8 @@
 #include <mutex>
 #include <optional>
 #include <string>
+
+#include "types.h"
 
 std::map<std::string, db_entry> db;
 std::map<std::string, std::unique_ptr<std::mutex>> key_mutexes;

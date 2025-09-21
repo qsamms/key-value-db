@@ -1,14 +1,16 @@
 #include "connection_handler.h"
-#include "types.h"
+
+#include <arpa/inet.h>
+
+#include <chrono>
+#include <iostream>
+#include <regex>
+
+#include "db.h"
 #include "exceptions.h"
 #include "response_codes.h"
+#include "types.h"
 #include "utils.h"
-#include "db.h" 
-
-#include <iostream>
-#include <arpa/inet.h>
-#include <chrono>
-#include <regex>
 
 std::regex int_re(R"(^[+-]?\d+$)");
 std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
