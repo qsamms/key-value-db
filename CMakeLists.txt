@@ -6,10 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(
     server 
-    main.cpp 
-    server.cpp
-    db.cpp
-    connection_handler.cpp
-    utils.cpp
-    response_codes.cpp
+    src/main.cpp 
+    src/server.cpp
+    src/db.cpp
+    src/connection.cpp
+    src/utils/utils.cpp
+    src/utils/response_codes.cpp
 )

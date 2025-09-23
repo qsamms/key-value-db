@@ -1,4 +1,4 @@
-#include "connection_handler.h"
+#include "connection.h"
 
 #include <arpa/inet.h>
 
@@ -7,16 +7,16 @@
 #include <regex>
 
 #include "db.h"
-#include "exceptions.h"
-#include "response_codes.h"
-#include "types.h"
-#include "utils.h"
+#include "utils/exceptions.h"
+#include "utils/response_codes.h"
+#include "utils/types.h"
+#include "utils/utils.h"
 
-std::regex int_re(R"(^[+-]?\d+$)");
-std::regex float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
-std::regex sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
+const std::regex Connection::int_re(R"(^[+-]?\d+$)");
+const std::regex Connection::float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
+const std::regex Connection::sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
 
-db_value value_from_string(const std::string& value) {
+db_value Connection::value_from_string(const std::string& value) {
     if (value.size() == 0) throw InvalidCommandException();
 
     if (std::regex_match(value, int_re))
@@ -27,7 +27,7 @@ db_value value_from_string(const std::string& value) {
         return value;
 }
 
-Action string_to_action(const std::string& s) {
+Action Connection::string_to_action(const std::string& s) {
     std::string lower = to_lower(s);
     if (lower == "set")
         return ACTION_SET;
@@ -39,7 +39,7 @@ Action string_to_action(const std::string& s) {
         throw InvalidCommandException();
 }
 
-Command parse_command(const std::string& command_str) {
+Command Connection::parse_command(const std::string& command_str) {
     std::vector<std::string> command_parts = split(command_str, ' ');
 
     if (command_parts.size() < 2) throw InvalidCommandException();
@@ -77,7 +77,7 @@ Command parse_command(const std::string& command_str) {
     return command;
 }
 
-std::string perform_command(Command& command) {
+std::string Connection::perform_command(Command& command) {
     std::string key = command.key;
     Action action = command.action;
 
@@ -94,7 +94,7 @@ std::string perform_command(Command& command) {
     }
 }
 
-void handle_connection(const uint32_t client_fd) {
+void Connection::handle_connection(const uint32_t client_fd) {
     char buffer[1024];
     while (1) {
         try {
@@ -114,5 +114,13 @@ void handle_connection(const uint32_t client_fd) {
             send(client_fd, ERR_UNKNOWN.c_str(), ERR_UNKNOWN.size(), 0);
         }
     }
-    close(client_fd);
+}
+
+Connection::Connection(int client_fd) {
+    client_fd_ = client_fd;
+    handle_connection(client_fd);
+}
+
+Connection::~Connection() {
+    close(client_fd_);
 }

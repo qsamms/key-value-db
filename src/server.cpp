@@ -9,7 +9,7 @@
 #include <string>
 #include <thread>
 
-#include "connection_handler.h"
+#include "connection.h"
 
 Server::Server() {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -61,7 +61,7 @@ void Server::run() {
         int client_port = ntohs(address.sin_port);
         std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
 
-        std::thread t(handle_connection, client_fd);
+        std::thread t([](int client_fd) -> void { Connection c(client_fd); }, client_fd);
         t.detach();
     }
 }
