@@ -10,7 +10,7 @@ class InvalidCommandException : public std::exception {
     std::string message;
 
    public:
-    InvalidCommandException(const std::string& s) { message = "ERR: " + s; }
+    InvalidCommandException(const std::string& s) { message = "ERR: " + s + "\n"; }
     InvalidCommandException() : message(ERR_INVALID_COMMAND) {}
 
     const char* what() const noexcept override { return message.c_str(); }

@@ -63,9 +63,12 @@ Command Connection::parse_command(const std::string& command_str) {
         if (command_parts.size() != 4)
             throw InvalidCommandException("'setex' must have 4 operands");
 
+        command.value = value_from_string(command_parts[2]);
+
         std::string expiration_str = command_parts[3];
         if (!std::regex_match(expiration_str, int_re))
             throw InvalidCommandException("expiration must be an integer");
+
         int expiration_seconds = std::stoi(expiration_str);
         if (expiration_seconds < 0) throw InvalidCommandException("expiration must be > 0");
 
@@ -95,8 +98,11 @@ std::string Connection::perform_command(Command& command) {
 
     else if (action == ACTION_DELETE) {
         if (del(key)) return OK;
-        return ERR_UNKNOWN;
+        return ERR_NOT_FOUND;
     }
+
+    else
+        throw InvalidCommandException("unknown action");
 }
 
 void Connection::handle_connection(const uint32_t client_fd) {

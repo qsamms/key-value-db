@@ -2,6 +2,7 @@
 
 #include <string>
 #include <variant>
+#include <cstdint>
 
 using db_value = std::variant<int, long, long long, double, std::string>;
 
