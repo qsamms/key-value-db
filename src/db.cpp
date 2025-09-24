@@ -56,3 +56,23 @@ int del(const std::string& key) {
     }
     return 0;
 }
+
+int persist(const Command& cmd) {
+    std::lock_guard<std::mutex> g(global_mutex);
+    auto it = db.find(cmd.key);
+    if (!(it == db.end())) {
+        it->second.expiration = -1;
+        return 1;
+    }
+    return 0;
+}
+
+int expire(const Command& cmd) {
+    std::lock_guard<std::mutex> g(global_mutex);
+    auto it = db.find(cmd.key);
+    if (!(it == db.end())) {
+        it->second.expiration = cmd.expiration;
+        return 1;
+    }
+    return 0;
+}

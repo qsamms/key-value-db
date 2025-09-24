@@ -13,6 +13,8 @@ enum Action {
     ACTION_SETEX,
     ACTION_GET,
     ACTION_DELETE,
+    ACTION_PERSIST,
+    ACTION_EXPIRE,
 };
 
 struct Command {

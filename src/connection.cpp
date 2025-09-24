@@ -27,8 +27,25 @@ Action Connection::string_to_action(const std::string& s) {
         return ACTION_GET;
     else if (lower == "del")
         return ACTION_DELETE;
+    else if (lower == "persist")
+        return ACTION_PERSIST;
+    else if (lower == "expire")
+        return ACTION_EXPIRE;
     else
         throw InvalidCommandException("Unknown action");
+}
+
+void Connection::parse_and_set_expiration(Command& cmd, const std::string& expiration_str) {
+    if (!std::regex_match(expiration_str, int_re))
+        throw InvalidCommandException("expiration must be an integer");
+
+    int expiration_seconds = std::stoi(expiration_str);
+    if (expiration_seconds < 0) throw InvalidCommandException("expiration must be > 0");
+
+    auto now = std::chrono::system_clock::now();
+    auto seconds_since_epoch =
+        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+    cmd.expiration = (int64_t)seconds_since_epoch + expiration_seconds;
 }
 
 Command Connection::parse_command(const std::string& command_str) {
@@ -50,20 +67,13 @@ Command Connection::parse_command(const std::string& command_str) {
     else if (cmd.action == ACTION_SETEX) {
         if (command_parts.size() != 4)
             throw InvalidCommandException("'setex' must have 4 operands");
-
         cmd.value = command_parts[2];
+        parse_and_set_expiration(cmd, command_parts[3]);
+    }
 
-        std::string expiration_str = command_parts[3];
-        if (!std::regex_match(expiration_str, int_re))
-            throw InvalidCommandException("expiration must be an integer");
-
-        int expiration_seconds = std::stoi(expiration_str);
-        if (expiration_seconds < 0) throw InvalidCommandException("expiration must be > 0");
-
-        auto now = std::chrono::system_clock::now();
-        auto seconds_since_epoch =
-            std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-        cmd.expiration = (int64_t)seconds_since_epoch + expiration_seconds;
+    else if (cmd.action == ACTION_EXPIRE) {
+        if (command_parts.size() != 3) throw InvalidCommandException("'expire' must have 3 operands");
+        parse_and_set_expiration(cmd, command_parts[2]);
     }
 
     return cmd;
@@ -86,6 +96,16 @@ std::string Connection::perform_command(Command& cmd) {
 
     else if (action == ACTION_DELETE) {
         if (del(key)) return OK;
+        return ERR_NOT_FOUND;
+    }
+
+    else if (action == ACTION_EXPIRE) {
+        if (expire(cmd)) return OK;
+        return ERR_NOT_FOUND;
+    }
+
+    else if (action == ACTION_PERSIST) {
+        if (persist(cmd)) return OK;
         return ERR_NOT_FOUND;
     }
 
