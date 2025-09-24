@@ -71,7 +71,7 @@ Command Connection::parse_command(const std::string& command_str) {
 
         auto now = std::chrono::system_clock::now();
         auto seconds_since_epoch =
-            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+            std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
         command.expiration = (int64_t)seconds_since_epoch + expiration_seconds;
     }
     return command;
