@@ -14,6 +14,7 @@ enum Action {
     ACTION_SET,
     ACTION_SETEX,
     ACTION_GET,
+    ACTION_DELETE,
 };
 
 struct Command {

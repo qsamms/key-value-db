@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <unistd.h>
+
 #include <chrono>
 #include <iostream>
 #include <regex>
@@ -17,7 +18,8 @@ const std::regex Connection::float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
 const std::regex Connection::sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
 
 db_value Connection::value_from_string(const std::string& value) {
-    if (value.size() == 0) throw InvalidCommandException();
+    if (value.size() == 0)
+        throw InvalidCommandException("Must provide a value for 'set' type operations");
 
     if (std::regex_match(value, int_re))
         return std::stoi(value.c_str());
@@ -35,45 +37,44 @@ Action Connection::string_to_action(const std::string& s) {
         return ACTION_SETEX;
     else if (lower == "get")
         return ACTION_GET;
+    else if (lower == "del")
+        return ACTION_DELETE;
     else
-        throw InvalidCommandException();
+        throw InvalidCommandException("Unknown action");
 }
 
 Command Connection::parse_command(const std::string& command_str) {
     std::vector<std::string> command_parts = split(command_str, ' ');
-
-    if (command_parts.size() < 2) throw InvalidCommandException();
-
-    std::string command_action = command_parts[0];
-    std::string command_key = command_parts[1];
-    std::string command_value;
-
-    if (command_parts.size() > 2) command_value = command_parts[2];
+    if (command_parts.size() < 2)
+        throw InvalidCommandException("All commands require an action and key");
 
     Command command;
-    command.action = string_to_action(command_action);
-    command.key = command_key;
+    command.action = string_to_action(command_parts[0]);
+    command.key = command_parts[1];
+    command.value = 0;
+    command.expiration = -1;
 
-    if (command.action == ACTION_GET)
-        command.value = 0;
-    else if (command.action == ACTION_SET) {
-        command.value = value_from_string(command_value);
-        command.expiration = -1;
-    } else if (command.action == ACTION_SETEX) {
-        if (command_parts.size() < 4) throw InvalidCommandException();
+    if (command.action == ACTION_SET) {
+        if (command_parts.size() != 3) throw InvalidCommandException("'set' must have 3 operands");
+        command.value = value_from_string(command_parts[2]);
+    }
 
-        command.value = value_from_string(command_value);
+    else if (command.action == ACTION_SETEX) {
+        if (command_parts.size() != 4)
+            throw InvalidCommandException("'setex' must have 4 operands");
 
         std::string expiration_str = command_parts[3];
-        if (!std::regex_match(expiration_str, int_re)) throw InvalidCommandException();
+        if (!std::regex_match(expiration_str, int_re))
+            throw InvalidCommandException("expiration must be an integer");
         int expiration_seconds = std::stoi(expiration_str);
-        if (expiration_seconds < 0) throw InvalidCommandException();
+        if (expiration_seconds < 0) throw InvalidCommandException("expiration must be > 0");
 
         auto now = std::chrono::system_clock::now();
         auto seconds_since_epoch =
             std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
         command.expiration = (int64_t)seconds_since_epoch + expiration_seconds;
     }
+
     return command;
 }
 
@@ -82,15 +83,19 @@ std::string Connection::perform_command(Command& command) {
     Action action = command.action;
 
     if (action == ACTION_GET) {
-        std::optional<db_entry> entry = get_value(key);
+        std::optional<db_entry> entry = get(key);
         if (!entry) return ERR_NOT_FOUND;
         return val_to_string(entry.value().value);
-    } else if (action == ACTION_SET || action == ACTION_SETEX) {
-        int status = set_value(key, command);
-        if (status) {
-            return OK;
-        } else
-            return ERR_SETTING_VALUE;
+    }
+
+    else if (action == ACTION_SET || action == ACTION_SETEX) {
+        if (set(key, command)) return OK;
+        return ERR_UNKNOWN;
+    }
+
+    else if (action == ACTION_DELETE) {
+        if (del(key)) return OK;
+        return ERR_UNKNOWN;
     }
 }
 

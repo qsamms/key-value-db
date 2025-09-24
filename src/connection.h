@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "utils/types.h"
 
