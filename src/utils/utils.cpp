@@ -24,14 +24,3 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
     return tokens;
 }
 
-std::string val_to_string(const db_value& v) {
-    return std::visit(
-        [](auto&& arg) -> std::string {
-            if constexpr (std::is_arithmetic_v<std::decay_t<decltype(arg)>>) {
-                return std::to_string(arg);
-            } else {
-                return arg;
-            }
-        },
-        v) + "\n";
-}

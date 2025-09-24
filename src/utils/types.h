@@ -1,13 +1,10 @@
 #pragma once
 
 #include <string>
-#include <variant>
 #include <cstdint>
 
-using db_value = std::variant<int, long, long long, double, std::string>;
-
 struct db_entry {
-    db_value value;
+    std::string value;
     int64_t expiration;
 };
 
@@ -21,6 +18,6 @@ enum Action {
 struct Command {
     Action action;
     std::string key;
-    db_value value;
+    std::string value;
     int64_t expiration;
 };

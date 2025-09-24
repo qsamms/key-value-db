@@ -14,7 +14,6 @@ class Connection {
     const static std::regex float_re;
     const static std::regex sci_re;
 
-    db_value value_from_string(const std::string& value);
     Action string_to_action(const std::string& s);
     Command parse_command(const std::string& command_str);
     std::string perform_command(Command& command);

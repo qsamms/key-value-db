@@ -17,18 +17,6 @@ const std::regex Connection::int_re(R"(^[+-]?\d+$)");
 const std::regex Connection::float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");
 const std::regex Connection::sci_re(R"(^[+-]?\d+([eE][+-]?\d+)$)");
 
-db_value Connection::value_from_string(const std::string& value) {
-    if (value.size() == 0)
-        throw InvalidCommandException("Must provide a value for 'set' type operations");
-
-    if (std::regex_match(value, int_re))
-        return std::stoi(value.c_str());
-    else if (std::regex_match(value, float_re) || std::regex_match(value, sci_re))
-        return std::stod(value.c_str());
-    else
-        return value;
-}
-
 Action Connection::string_to_action(const std::string& s) {
     std::string lower = to_lower(s);
     if (lower == "set")
@@ -51,19 +39,19 @@ Command Connection::parse_command(const std::string& command_str) {
     Command command;
     command.action = string_to_action(command_parts[0]);
     command.key = command_parts[1];
-    command.value = 0;
+    command.value = "";
     command.expiration = -1;
 
     if (command.action == ACTION_SET) {
         if (command_parts.size() != 3) throw InvalidCommandException("'set' must have 3 operands");
-        command.value = value_from_string(command_parts[2]);
+        command.value = command_parts[2];
     }
 
     else if (command.action == ACTION_SETEX) {
         if (command_parts.size() != 4)
             throw InvalidCommandException("'setex' must have 4 operands");
 
-        command.value = value_from_string(command_parts[2]);
+        command.value = command_parts[2];
 
         std::string expiration_str = command_parts[3];
         if (!std::regex_match(expiration_str, int_re))
@@ -88,7 +76,7 @@ std::string Connection::perform_command(Command& command) {
     if (action == ACTION_GET) {
         std::optional<db_entry> entry = get(key);
         if (!entry) return ERR_NOT_FOUND;
-        return val_to_string(entry.value().value);
+        return entry.value().value + "\n";
     }
 
     else if (action == ACTION_SET || action == ACTION_SETEX) {
