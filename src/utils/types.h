@@ -22,5 +22,5 @@ struct Command {
     Action action;
     std::string key;
     db_value value;
-    uint64_t expiration;
+    int64_t expiration;
 };
