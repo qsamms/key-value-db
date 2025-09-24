@@ -14,12 +14,12 @@
 std::map<std::string, db_entry> db;
 std::mutex global_mutex;
 
-int set(const std::string& key, const Command& command) {
+int set(const Command& cmd) {
     std::lock_guard<std::mutex> g(global_mutex);
     db_entry entry;
-    entry.expiration = command.expiration;
-    entry.value = command.value;
-    db[key] = entry;
+    entry.expiration = cmd.expiration;
+    entry.value = cmd.value;
+    db[cmd.key] = entry;
     return 1;
 }
 
