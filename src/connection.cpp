@@ -1,7 +1,7 @@
 #include "connection.h"
 
 #include <arpa/inet.h>
-
+#include <unistd.h>
 #include <chrono>
 #include <iostream>
 #include <regex>
