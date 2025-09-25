@@ -72,7 +72,8 @@ Command Connection::parse_command(const std::string& command_str) {
     }
 
     else if (cmd.action == ACTION_EXPIRE) {
-        if (command_parts.size() != 3) throw InvalidCommandException("'expire' must have 3 operands");
+        if (command_parts.size() != 3)
+            throw InvalidCommandException("'expire' must have 3 operands");
         parse_and_set_expiration(cmd, command_parts[2]);
     }
 

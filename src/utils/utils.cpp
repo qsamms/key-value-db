@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include <sstream>
 #include <cstdint>
+#include <sstream>
 
 std::string to_lower(const std::string& str) {
     std::string out(str);
@@ -23,4 +23,3 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
 
     return tokens;
 }
-

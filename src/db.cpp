@@ -39,7 +39,7 @@ std::optional<db_entry> get(const std::string& key) {
     if (expiration > 0) {
         auto now = std::chrono::system_clock::now();
         auto seconds_since_epoch =
-            std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
         if (seconds_since_epoch > expiration) {
             db.erase(key);
             return std::nullopt;
@@ -61,6 +61,14 @@ int persist(const Command& cmd) {
     std::lock_guard<std::mutex> g(global_mutex);
     auto it = db.find(cmd.key);
     if (!(it == db.end())) {
+        db_entry entry = it->second;
+        auto now = std::chrono::system_clock::now();
+        auto seconds_since_epoch =
+            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+        if (it->second.expiration > 0 && seconds_since_epoch > it->second.expiration) {
+            db.erase(cmd.key);
+            return 0;
+        }
         it->second.expiration = -1;
         return 1;
     }
