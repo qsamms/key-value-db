@@ -1,13 +1,13 @@
 #pragma once
 
+#include <utils/types.h>
+
 #include <ctime>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
-
-#include <utils/types.h>
 
 extern std::map<std::string, db_entry> db;
 extern std::mutex global_mutex;

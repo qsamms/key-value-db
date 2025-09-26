@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdint>
 #include <sstream>
 
@@ -22,4 +23,9 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
     }
 
     return tokens;
+}
+
+uint64_t seconds_since_epoch() {
+    auto now = std::chrono::system_clock::now();
+    return duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
 }

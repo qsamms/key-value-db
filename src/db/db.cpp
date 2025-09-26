@@ -1,5 +1,8 @@
 #include "db.h"
 
+#include <utils/types.h>
+#include <utils/utils.h>
+
 #include <chrono>
 #include <exception>
 #include <iostream>
@@ -8,8 +11,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-
-#include <utils/types.h>
 
 std::map<std::string, db_entry> db;
 std::mutex global_mutex;
@@ -25,9 +26,6 @@ int set(const Command& cmd) {
 
 std::optional<db_entry> get(const std::string& key) {
     std::lock_guard<std::mutex> g(global_mutex);
-    if (!db.contains(key)) {
-        return std::nullopt;
-    }
 
     auto it = db.find(key);
     if (it == db.end()) {
@@ -37,10 +35,7 @@ std::optional<db_entry> get(const std::string& key) {
     int64_t expiration = entry.expiration;
 
     if (expiration > 0) {
-        auto now = std::chrono::system_clock::now();
-        auto seconds_since_epoch =
-            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-        if (seconds_since_epoch > expiration) {
+        if (seconds_since_epoch() > expiration) {
             db.erase(key);
             return std::nullopt;
         }
@@ -62,14 +57,11 @@ int persist(const Command& cmd) {
     auto it = db.find(cmd.key);
     if (!(it == db.end())) {
         db_entry entry = it->second;
-        auto now = std::chrono::system_clock::now();
-        auto seconds_since_epoch =
-            duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-        if (it->second.expiration > 0 && seconds_since_epoch > it->second.expiration) {
+        if (entry.expiration > 0 && seconds_since_epoch() > entry.expiration) {
             db.erase(cmd.key);
             return 0;
         }
-        it->second.expiration = -1;
+        entry.expiration = -1;
         return 1;
     }
     return 0;

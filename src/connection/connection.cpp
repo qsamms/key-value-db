@@ -1,16 +1,15 @@
 #include "connection.h"
 
 #include <arpa/inet.h>
+#include <db/db.h>
 #include <unistd.h>
+#include <utils/exceptions.h>
+#include <utils/response_codes.h>
+#include <utils/utils.h>
 
 #include <chrono>
 #include <iostream>
 #include <regex>
-
-#include <db/db.h>
-#include <utils/exceptions.h>
-#include <utils/response_codes.h>
-#include <utils/utils.h>
 
 const std::regex Connection::int_re(R"(^[+-]?\d+$)");
 const std::regex Connection::float_re(R"(^[+-]?\d*\.\d+([eE][+-]?\d+)?$)");

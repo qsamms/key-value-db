@@ -1,14 +1,14 @@
 #include "server.h"
 
 #include <arpa/inet.h>
+#include <connection/connection.h>
 #include <unistd.h>
+
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <thread>
-
-#include <connection/connection.h>
 
 using RuntimeError = std::runtime_error;
 

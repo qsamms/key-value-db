@@ -1,12 +1,12 @@
 #pragma once
 
+#include <server/server.h>
+#include <utils/types.h>
+
 #include <cstdint>
 #include <regex>
 #include <string>
 #include <vector>
-
-#include <server/server.h>
-#include <utils/types.h>
 
 class Connection {
    private:
