@@ -9,7 +9,7 @@
 #include <string>
 #include <thread>
 
-#include "connection.h"
+#include "../connection/connection.h"
 
 using RuntimeError = std::runtime_error;
 

@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-#include "utils/types.h"
+#include "../utils/types.h"
 
 std::map<std::string, db_entry> db;
 std::mutex global_mutex;

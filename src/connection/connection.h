@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "server.h"
-#include "utils/types.h"
+#include "../server/server.h"
+#include "../utils/types.h"
 
 class Connection {
    private:
