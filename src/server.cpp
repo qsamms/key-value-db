@@ -66,7 +66,6 @@ void Server::run() {
             std::string client_ip = inet_ntoa(address.sin_addr);
             int client_port = ntohs(address.sin_port);
             std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
-
             {
                 std::lock_guard<std::mutex> lck(connection_info.mutex);
                 connection_info.open_connections++;
