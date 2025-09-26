@@ -2,14 +2,13 @@
 
 #include <arpa/inet.h>
 #include <unistd.h>
-
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <thread>
 
-#include "../connection/connection.h"
+#include <connection/connection.h>
 
 using RuntimeError = std::runtime_error;
 

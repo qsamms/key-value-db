@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
-project(key-value-db CXX)
+project(KeyValueDB CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(
-    server 
+    db
     src/main.cpp 
     src/server/server.cpp
     src/db/db.cpp
@@ -13,3 +13,5 @@ add_executable(
     src/utils/utils.cpp
     src/utils/response_codes.cpp
 )
+
+target_include_directories(db PRIVATE src/)
