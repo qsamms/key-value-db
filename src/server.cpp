@@ -11,18 +11,14 @@
 
 #include "connection.h"
 
-Server::Server() {
+using RuntimeError = std::runtime_error;
+
+Server::Server(uint32_t server_port, uint32_t max_pending_connections) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
-        throw std::runtime_error("failed to create socket");
+        throw RuntimeError("failed to create socket");
     }
-}
 
-Server::~Server() {
-    close(server_fd);
-}
-
-void Server::bind_and_listen(uint32_t server_port, uint8_t max_pending_connections) {
     port = server_port;
     address.sin_family = AF_INET;          // IPv4
     address.sin_addr.s_addr = INADDR_ANY;  // Bind to all interfaces
@@ -31,18 +27,22 @@ void Server::bind_and_listen(uint32_t server_port, uint8_t max_pending_connectio
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
         close(server_fd);
-        throw std::runtime_error("setsockopt failed");
+        throw RuntimeError("setsockopt failed");
     }
 
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) == -1) {
         close(server_fd);
-        throw std::runtime_error("bind failed");
+        throw RuntimeError("bind failed");
     }
 
     if (listen(server_fd, max_pending_connections) == -1) {
         close(server_fd);
-        throw std::runtime_error("listen failed");
+        throw RuntimeError("listen failed");
     }
+}
+
+Server::~Server() {
+    close(server_fd);
 }
 
 void Server::run() {
@@ -53,15 +53,15 @@ void Server::run() {
         int client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen);
 
         if (client_fd == -1) {
+            std::cout << "Failed to accept connection" << std::endl;
             close(server_fd);
-            throw std::runtime_error("accept failed");
         }
 
         std::string client_ip = inet_ntoa(address.sin_addr);
         int client_port = ntohs(address.sin_port);
         std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
 
-        std::thread t([](int client_fd) -> void { Connection c(client_fd); }, client_fd);
+        std::thread t([client_fd]() -> void { Connection c(client_fd); });
         t.detach();
     }
 }
