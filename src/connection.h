@@ -5,10 +5,12 @@
 #include <string>
 #include <vector>
 
+#include "server.h"
 #include "utils/types.h"
 
 class Connection {
    private:
+    ConnectionInfo* connection_info_;
     int client_fd_;
     const static std::regex int_re;
     const static std::regex float_re;
@@ -22,6 +24,6 @@ class Connection {
    public:
     void handle_connection(const uint32_t client_fd);
 
-    Connection(int client_fd);
+    Connection(int client_fd, ConnectionInfo* connection_info);
     ~Connection();
 };

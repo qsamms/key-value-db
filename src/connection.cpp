@@ -136,11 +136,14 @@ void Connection::handle_connection(const uint32_t client_fd) {
     }
 }
 
-Connection::Connection(int client_fd) {
+Connection::Connection(int client_fd, ConnectionInfo* connection_info) {
+    connection_info_ = connection_info;
     client_fd_ = client_fd;
     handle_connection(client_fd);
 }
 
 Connection::~Connection() {
+    std::lock_guard<std::mutex> lck(connection_info_->mutex);
+    connection_info_->open_connections--;
     close(client_fd_);
 }

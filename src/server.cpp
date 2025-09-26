@@ -13,7 +13,8 @@
 
 using RuntimeError = std::runtime_error;
 
-Server::Server(uint32_t server_port, uint32_t max_pending_connections) {
+Server::Server(uint32_t server_port, uint32_t max_pending_connections,
+               uint32_t max_concurrent_connections) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         throw RuntimeError("failed to create socket");
@@ -51,17 +52,30 @@ void Server::run() {
     while (1) {
         socklen_t addrlen = sizeof(address);
         int client_fd = accept(server_fd, (struct sockaddr*)&address, &addrlen);
-
         if (client_fd == -1) {
             std::cout << "Failed to accept connection" << std::endl;
-            close(server_fd);
+        }
+         
+        {
+            std::lock_guard<std::mutex> lck(connection_info.mutex);
+            std::cout << connection_info.open_connections << " " << connection_info.max_connections << std::endl;
+            if (connection_info.open_connections >= connection_info.max_connections) {
+                std::cout << "Max number of connections reached: " << connection_info.max_connections
+                        << " rejecting connection" << std::endl;
+                close(client_fd);
+                continue;
+            }
         }
 
         std::string client_ip = inet_ntoa(address.sin_addr);
         int client_port = ntohs(address.sin_port);
         std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
 
-        std::thread t([client_fd]() -> void { Connection c(client_fd); });
+        {
+            std::lock_guard<std::mutex> lck(connection_info.mutex);
+            connection_info.open_connections++;
+        }
+        std::thread t([client_fd, this] { Connection c(client_fd, &connection_info); });
         t.detach();
     }
 }
