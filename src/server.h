@@ -18,9 +18,9 @@ class Server {
 
    public:
     Server(const Server& server) = delete;
-    Server(const Server&& server) = delete;
     Server& operator=(const Server& server) = delete;
-    Server& operator=(const Server&& server) = delete;
+    Server(Server&& server) = delete;
+    Server& operator=(Server&& server) = delete;
 
     static Server& get_instance() {
         static Server server(SERVER_PORT, MAX_PENDING_CONNECTIONS);
