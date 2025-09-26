@@ -10,6 +10,8 @@
 #include <string>
 #include <thread>
 
+#include "string.h"
+
 using RuntimeError = std::runtime_error;
 
 Server::Server(uint32_t server_port, uint32_t max_pending_connections,
@@ -19,6 +21,7 @@ Server::Server(uint32_t server_port, uint32_t max_pending_connections,
         throw RuntimeError("failed to create socket");
     }
 
+    memset(&address, 0, sizeof(address));
     port = server_port;
     address.sin_family = AF_INET;          // IPv4
     address.sin_addr.s_addr = INADDR_ANY;  // Bind to all interfaces
