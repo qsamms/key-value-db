@@ -55,26 +55,28 @@ void Server::run() {
         if (client_fd == -1) {
             std::cout << "Failed to accept connection" << std::endl;
         }
-         
+
+        bool conn_ok;
         {
             std::lock_guard<std::mutex> lck(connection_info.mutex);
-            if (connection_info.open_connections >= connection_info.max_connections) {
-                std::cout << "Max number of connections reached: " << connection_info.max_connections
-                        << " rejecting connection" << std::endl;
-                close(client_fd);
-                continue;
+            conn_ok = connection_info.open_connections < connection_info.max_connections;
+        }
+
+        if (conn_ok) {
+            std::string client_ip = inet_ntoa(address.sin_addr);
+            int client_port = ntohs(address.sin_port);
+            std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
+
+            {
+                std::lock_guard<std::mutex> lck(connection_info.mutex);
+                connection_info.open_connections++;
             }
+            std::thread t([client_fd, this] { Connection c(client_fd, &connection_info); });
+            t.detach();
+        } else {
+            std::cout << "Connection limit reached (" << connection_info.max_connections
+                      << ") rejecting connection" << std::endl;
+            close(client_fd);
         }
-
-        std::string client_ip = inet_ntoa(address.sin_addr);
-        int client_port = ntohs(address.sin_port);
-        std::cout << "Connection from " << client_ip << ":" << client_port << std::endl;
-
-        {
-            std::lock_guard<std::mutex> lck(connection_info.mutex);
-            connection_info.open_connections++;
-        }
-        std::thread t([client_fd, this] { Connection c(client_fd, &connection_info); });
-        t.detach();
     }
 }
