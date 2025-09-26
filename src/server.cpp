@@ -58,7 +58,6 @@ void Server::run() {
          
         {
             std::lock_guard<std::mutex> lck(connection_info.mutex);
-            std::cout << connection_info.open_connections << " " << connection_info.max_connections << std::endl;
             if (connection_info.open_connections >= connection_info.max_connections) {
                 std::cout << "Max number of connections reached: " << connection_info.max_connections
                         << " rejecting connection" << std::endl;
